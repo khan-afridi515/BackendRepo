@@ -1,0 +1,25 @@
+const express = require('express');
+const { addBorrowPerson, getAdminBorrowPersons, getBorrowPersonById, editBorrowPerson, deleteBorrowPerson } = require('../controllers/borrowPersonController');
+const { verifyToken } = require('../middleware/auth');
+
+const router = express.Router();
+
+// Route to add a new borrow person
+router.post('/add', verifyToken, addBorrowPerson);
+
+// Route to get all borrow persons added by the authenticated admin
+router.get('/my-borrow-persons', verifyToken, getAdminBorrowPersons);
+
+// Route to get a specific borrow person by ID
+router.get('/my-borrow-persons/:id', verifyToken, getBorrowPersonById);
+
+// Route to Edit Borrow Person
+router.put('/edit/:id', verifyToken, editBorrowPerson);
+
+// Route to delete the Borrow Person
+router.delete('/delete/:id', verifyToken, deleteBorrowPerson);
+
+// Route to get a specific borrow person by ID
+router.get('/my-borrow-persons/:id', verifyToken, getBorrowPersonById);
+
+module.exports = router;
