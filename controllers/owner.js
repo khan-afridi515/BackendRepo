@@ -4,6 +4,32 @@ const Owner = require('../models/Owner');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+
+exports.createOwner = async (req, res) =>{
+    try{
+       const {role, email, password} = req.body;
+
+       if(!email && !password){
+        return res.status(400).json({wrn:"All fields are required"})
+       }
+
+       const hashPassword = await bcrypt.hash(password, 10);
+
+       const addAdmin = await Owner.create({role, email, password:hashPassword})
+
+       if(!addAdmin) return res.status(400).json({wrn:"Admin is not created"});
+       return res.status(200).json({msg:"Owner account created successfully", admin:addAdmin})
+
+    
+    }
+    catch(err){
+        console.log(err);
+    }
+}
+
+
+
+
 // Owner login
 exports.ownerLogin = async (req, res) => {
     const { email, password } = req.body;
@@ -11,16 +37,17 @@ exports.ownerLogin = async (req, res) => {
     try {
         const owner = await Owner.findOne({ email });
         if (!owner) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+            return res.status(400).json({ message: 'email is incorrect' });
         }
-
+  
+        const passMatch = await bcrypt.compare(password, owner.password)
         // Compare Password
-        if (owner.password !== password) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+        if (!passMatch) {
+            return res.status(400).json({ message: 'password is incorrect' });
         }
 
         const token = jwt.sign({ ownerId: owner._id }, process.env.JWT_SECRET, { expiresIn: '9h' });
-        res.json({ token });
+        return res.json({msg:"You have logged in successfully", myToken:token });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
     }

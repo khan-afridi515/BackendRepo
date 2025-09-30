@@ -1,8 +1,9 @@
 const Employee = require('../models/Employees');
+const fileOnCloudinary = require('./cloudinary');
 
 // Controller to add a new employee
 exports.addEmployee = async (req, res) => {
-    const { name, email, mob, CNIC, salary, shift, dateOfJoining, empId } = req.body;
+    const { name, email, mob, CNIC, salary, shift, dateOfJoining, empId, role, workingHours, status } = req.body;
     const adminId = req.admin._id; 
     const cnicPic = req.file ? req.file.path : null; 
 
@@ -11,7 +12,12 @@ exports.addEmployee = async (req, res) => {
         if (!name || !email || !mob || !CNIC || !salary || !shift || !dateOfJoining) {
             return res.status(400).json({ message: 'All required fields must be provided' });
         }
-
+       
+        let image_Url = "";
+        if(req.file){
+            const imgSrc = await fileOnCloudinary(req.file.path);
+            image_Url = imgSrc.secure_url;
+        }
         // Create a new employee instance
         const employee = new Employee({
             name,
@@ -22,8 +28,11 @@ exports.addEmployee = async (req, res) => {
             salary,
             shift,
             dateOfJoining,
-            cnicPic,
+            cnicPic:image_Url,
             adminId,
+            role,
+            workingHours,
+            status
         });
 
         // Save the employee to the database
@@ -44,13 +53,48 @@ exports.getAdminEmployees = async (req, res) => {
     const adminId = req.admin._id;
 
     try {
-        const employees = await Employee.find({ adminId });
+        console.log("This is adminId",adminId);
+        const employees = await Employee.find({ adminId:adminId.toString()});
         res.status(200).json(employees);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error', error });
     }
 };
+
+exports.searChbyName = async (req, res) => {
+    try{
+         const {name, CNIC} = req.body;
+
+         const query = {
+            $or:[]
+        };
+
+         if(name){
+            query.$or.push({name: {$regex : `^${name}$`, $options:"i"}})
+         }
+
+         if(CNIC){
+            query.$or.push({CNIC: CNIC});
+         }
+
+         if(query.$or.length === 0){
+            return res.status(401).json({wrn:"please provide name or CNIC"});
+         }
+
+         const employOne = await Employee.findOne(query);
+        //  const employOne = await Employee.findOne({name: {$regex: `^${name}$`, $options:"i"}});
+
+         if(!employOne){
+            return res.status(400).json({wrn:"Employ does not found"})
+         }
+
+         return res.status(200).json({msg:"Employ successfully find!", employOne})
+    }
+    catch(err){
+            console.log(err);
+    }
+}
 
 // Controller to get a specific employee by ID, 
 exports.getEmployeeById = async (req, res) => {
@@ -125,31 +169,31 @@ exports.deleteEmployee = async (req, res) => {
 exports.editEmployee = async (req, res) => {
     const { id } = req.params;
     const adminId = req.admin._id;
-    const { name, email, mob, CNIC, salary, shift, dateOfJoining } = req.body;
+    const { name, email, mob, CNIC, salary, shift, dateOfJoining, role, workingHours, status } = req.body;
     const cnicPic = req.file ? req.file.path : undefined; // Handle optional update of CNIC picture
 
     try {
-        // Find the employee by ID and ensure it belongs to the authenticated admin
-        const employee = await Employee.findOne({ _id: id, adminId });
-
-        if (!employee) {
-            return res.status(404).json({ message: 'Employee not found or you do not have permission to edit this employee' });
+        const updateInfo = {
+            name:name, 
+            email:email,
+            mob:mob, 
+            CNIC:CNIC,
+            salary:salary,
+            shift:shift,
+            dateOfJoining:dateOfJoining,
+            role:role,
+            workingHours:workingHours,
+            status:status
         }
 
-        // Update employee details with provided fields
-        if (name) employee.name = name;
-        if (email) employee.email = email;
-        if (mob) employee.mob = mob;
-        if (CNIC) employee.CNIC = CNIC;
-        if (salary) employee.salary = salary;
-        if (shift) employee.shift = shift;
-        if (dateOfJoining) employee.dateOfJoining = dateOfJoining;
-        if (cnicPic) employee.cnicPic = cnicPic; // Update CNIC picture if provided
+        if(req.file){
+            const uploadImg = await fileOnCloudinary(req.file.path);
+            updateInfo.cnicPic = uploadImg.secure_url
+        }
 
-        // Save the updated employee details
-        await employee.save();
+        const updateEmploy = await Employee.findByIdAndUpdate({_id: id, adminId} , updateInfo, {new:true})
 
-        res.status(200).json({ message: 'Employee updated successfully', employee });
+        res.status(200).json({ message: 'Employee updated successfully', updateEmploy });
     } catch (error) {
         console.error(error);
         if (error.code === 11000) {

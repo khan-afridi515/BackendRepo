@@ -46,6 +46,16 @@ const employeeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',
         required: true,
+    },
+    role:{
+      type:String,
+      required:true
+    },
+    workingHours:{
+        type:String
+    },
+    status:{
+        type:String
     }
 }, { timestamps: true });
 

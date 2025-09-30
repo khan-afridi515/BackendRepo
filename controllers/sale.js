@@ -7,13 +7,17 @@ const fs = require('fs');
 const path = require('path');
 
 exports.sellProduct = async (req, res) => {
-    const { productId, quantitySold, customerName, customerCNIC, discount = 0 } = req.body;
+    const { productName, quantitySold, customerName, customerCNIC, discount} = req.body;
     const adminId = req.admin._id;
 
     try {
         // Validate the productId as a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return res.status(400).json({ message: 'Invalid productId provided.' });
+        // if (!mongoose.Types.ObjectId.isValid(productId)) {
+        //     return res.status(400).json({ message: 'Invalid productId provided.' });
+        // }
+
+        if(!productName){
+            return res.status(400).json({wrn:"Please enter a correct productName"})
         }
 
         // Validate quantitySold as a positive number
@@ -26,7 +30,9 @@ exports.sellProduct = async (req, res) => {
         }
 
         // Find the product by ID
-        const product = await Product.findById(productId);
+    
+        // const product = await Product.findById(productId);
+        const product = await Product.findOne({name: { $regex: `^${productName}$`, $options: 'i' }, adminId});
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
@@ -41,6 +47,11 @@ exports.sellProduct = async (req, res) => {
 
         // Calculate the total price, applying the discount
         const totalPrice = product.sellPrice * quantitySold * (1 - validDiscount / 100);
+        const price = product.sellPrice;
+        const discountedPrice = product.sellPrice*(1-validDiscount/100);
+        const productMargin = product.sellPrice - discountedPrice;
+        // const invoiceNumber= sale._id;
+        const date = new Date();
 
         // Check if the totalPrice calculation resulted in a valid number
         if (isNaN(totalPrice) || totalPrice <= 0) {
@@ -56,27 +67,38 @@ exports.sellProduct = async (req, res) => {
         product.quantity -= quantitySold;
         await product.save();
 
-        // Create a sale record
+        
+
         const sale = new Sale({
-            productId,
+            sPrice:product.sellPrice,
+            rPrice:product.retailprice,
+            productName,
+            // productName:product.name,
+            productName:product.productId,
             adminId,
-            quantitySold,
-            totalPrice,
             discount: validDiscount,
-            customerName,
-            customerCNIC,
+            totalPrice,
+            quantitySold,
+            // customerName,
+            // customerCNIC,
+            discountedPrice,
+            productMargin,
+            // invoiceNumber,
+            // date
         });
         await sale.save();
 
         // Generate an invoice
         const invoiceData = {
-            productName: product.name,
+            productName,
             quantitySold,
+            price,
+            discount,
             totalPrice,
             customerName,
             customerCNIC,
             invoiceNumber: sale._id,
-            date: new Date(),
+            date:date.toISOString().split('T')[0],
         };
         const invoice = new Invoice({
             saleId: sale._id,
@@ -96,17 +118,56 @@ exports.sellProduct = async (req, res) => {
         invoice.pdfUrl = pdfPath;
         await invoice.save();
 
-        res.status(201).json({
-            message: 'Product sold successfully',
-            sale,
-            invoice,
-        });
+        res.status(201).json({message: 'Product sold successfully',sale,invoice,});
     } catch (error) {
         console.error('Error in selling product:', error);
         res.status(500).json({ message: 'Server error', error });
     }
 };
 
+exports.allDelete = async (req, res) => {
+    try{
+       const allselledProduct  = await Sale.deleteMany();
+
+       return res.status(200).json({msg:"All sell product has been deleted"})
+    }
+    catch(err){
+        console.log(err)
+    }
+}
+
+exports.searchSale = async (req, res) => {
+    try{
+         const {productName} = req.body;
+            
+         if(!productName){
+            return res.status(400).json({wrn:"Enter product name"})
+         }
+
+         const saleOne = await Sale.findOne({productName:{$regex: `^${productName}$`, $options:"i"}});
+        //  const employOne = await Employee.findOne({name: {$regex: `^${name}$`, $options:"i"}});
+
+         if(!saleOne){
+            return res.status(400).json({wrn:"sale does not found"})
+         }
+
+         return res.status(200).json({msg:"Sale successfully find!", saleOne})
+    }
+    catch(err){
+            console.log(err);
+    }
+}
+
+exports.AllSellProduct = async(req, res) =>{
+    try{
+         const allProducts = await Sale.find();
+         if(!allProducts || allProducts.length === 0) return res.status(400).json({wrn:"Product not founded"});
+         return res.status(200).json({msg:"all sels products successfully finded.", products:allProducts})
+    }
+    catch(err){
+        console.log(err);
+    }
+}
 // Function to generate an invoice PDF
 function generateInvoicePDF(invoiceData, filePath) {
     const doc = new pdf();

@@ -1,5 +1,5 @@
 const express = require('express');
-const { addEmployee, getAdminEmployees, getEmployeeById, getEmployeesByName, deleteEmployee, editEmployee } = require('../controllers/employees');
+const { addEmployee, getAdminEmployees, getEmployeeById, getEmployeesByName, deleteEmployee, editEmployee, searChbyName } = require('../controllers/employees');
 const { verifyToken } = require('../middleware/auth');
 const multer = require('multer');
 
@@ -17,7 +17,9 @@ router.get('/my-employees', verifyToken, getAdminEmployees);
 // Route to fetch the employee by name 
 router.get('/my-employees/search', verifyToken,getEmployeesByName)
 
-router.put('/edit/:id',verifyToken,editEmployee)
+router.put('/edit/:id',verifyToken, upload.single('cnicPic'), editEmployee)
+
+router.post('/searchName', verifyToken, searChbyName);
 
 // Route to delete the specific Employee
 router.delete('/delete/:id', verifyToken, deleteEmployee);

@@ -19,3 +19,6 @@ exports.authorizeOwner = async (req, res, next) => {
         res.status(401).json({ message: 'Invalid token' });
     }
 };
+
+
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lcklkIjoiNjhjMjdhZjE0ZGUxYzNjNDVkYWIxYmVlIiwiaWF0IjoxNzU3NTc1OTM4LCJleHAiOjE3NTc2MDgzMzh9.Hox3erDQxgCmSrVRmG3iD4zOuSyqywfvUQnq3b0ZJXQ

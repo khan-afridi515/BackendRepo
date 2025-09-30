@@ -1,3 +1,4 @@
+const { findOneAndDelete } = require('../models/Admin');
 const Invoice = require('../models/Invoice');
 
 // Controller to get invoices by customer name or CNIC 
@@ -41,3 +42,32 @@ exports.getInvoicesByCustomer = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
+
+
+exports.AllSellInvoice= async(req, res) =>{
+    try{
+         const allInvoices = await Invoice.find();
+         if(!allInvoices || allInvoices.length === 0) return res.status(400).json({wrn:"Product not founded"});
+         return res.status(200).json({msg:"all sels products successfully finded.", productss:allInvoices})
+    }
+    catch(err){
+        console.log(err);
+    }
+}
+
+exports.invoiceDelete = async(req, res)=>{
+    try{
+         const { id } = req.params;
+         const adminId = req.admin._id;
+
+         const dltInvoice = await Invoice.findByIdAndDelete({_id: id, adminId});
+         if(!dltInvoice){
+            return res.status(400).json({wrn:"invoice not deleted!"});
+
+         } 
+         return res.status(200).json({msg:"Invoice has been deleted", removeInvoice:dltInvoice})
+    }
+    catch(err){ 
+        console.log(err);
+    }
+}

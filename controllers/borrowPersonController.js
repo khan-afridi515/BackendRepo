@@ -1,9 +1,11 @@
 const BorrowPerson = require('../models/BorrowPerson');
 const mongoose = require('mongoose');
+const fileOnCloudinary = require('./cloudinary');
+
 
 // Controller to add a new borrow person
 exports.addBorrowPerson = async (req, res) => {
-    const { name, cnic, address, dues } = req.body;
+    const { name, cnic, address, dues} = req.body;
     const adminId = req.admin._id;
 
     try {
@@ -12,18 +14,27 @@ exports.addBorrowPerson = async (req, res) => {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
+        let imgPath = " ";
+        if(req.file){
+            let imgLink = await fileOnCloudinary(req.file.path);
+            imgPath = imgLink.secure_url;
+        }
+
         // Create a new borrow person instance
         const borrowPerson = new BorrowPerson({
+
             name,
             cnic,
             address,
             dues,
             adminId,
+            cnicImg:imgPath
+            
         });
 
         // Save the borrow person to the database
         await borrowPerson.save();
-        res.status(201).json({ message: 'Borrow person added successfully', borrowPerson });
+        res.status(201).json({ message: 'Borrow person added successfully', borrowMan:borrowPerson });
     } catch (error) {
         console.error('Error adding borrow person:', error);
         if (error.code === 11000) {
@@ -74,6 +85,41 @@ exports.getBorrowPersonById = async (req, res) => {
 };
 
 
+exports.searChBorrow = async (req, res) => {
+    try{
+         const {name, cnic} = req.body;
+
+         const query = {
+            $or:[]
+        };
+
+         if(name){
+            query.$or.push({name: {$regex : `^${name}$`, $options:"i"}})
+         }
+
+         if(cnic){
+            query.$or.push({cnic: cnic});
+         }
+
+         if(query.$or.length === 0){
+            return res.status(401).json({wrn:"please provide name or CNIC"});
+         }
+
+         const employOne = await BorrowPerson.findOne(query);
+        //  const employOne = await Employee.findOne({name: {$regex: `^${name}$`, $options:"i"}});
+
+         if(!employOne){
+            return res.status(400).json({wrn:"Borrow does not found"})
+         }
+
+         return res.status(200).json({msg:"Borrow successfully find!", employOne})
+    }
+    catch(err){
+            console.log(err);
+    }
+}
+
+
 // Controller to edit a borrow person's details
 exports.editBorrowPerson = async (req, res) => {
     const { id } = req.params;
@@ -87,22 +133,38 @@ exports.editBorrowPerson = async (req, res) => {
         }
 
         // Find the borrow person by ID and ensure it belongs to the authenticated admin
-        const borrowPerson = await BorrowPerson.findOne({ _id: id, adminId });
+        // const borrowPerson = await BorrowPerson.findOne({ _id: id, adminId });
 
-        if (!borrowPerson) {
-            return res.status(404).json({ message: 'Borrow person not found or you do not have permission to edit this person.' });
+        // if (!borrowPerson) {
+        //     return res.status(404).json({ message: 'Borrow person not found or you do not have permission to edit this person.' });
+        // }
+
+        const newDetails = {
+            name : name,
+            cnic : cnic,
+            address : address,
+            dues : dues
+        }
+  
+        
+        if(req.file){
+            const imgSrc = await fileOnCloudinary(req.file.path);
+            newDetails.cnicImg = imgSrc.secure_url;
         }
 
+
+        const updateDetails = await BorrowPerson.findByIdAndUpdate({_id:id, adminId}, newDetails, {new:true})
+
         // Update borrow person details with provided fields
-        if (name) borrowPerson.name = name;
-        if (cnic) borrowPerson.cnic = cnic;
-        if (address) borrowPerson.address = address;
-        if (dues != null) borrowPerson.dues = dues;
+        // if (name) borrowPerson.name = name;
+        // if (cnic) borrowPerson.cnic = cnic;
+        // if (address) borrowPerson.address = address;
+        // if (dues != null) borrowPerson.dues = dues;
 
         // Save the updated borrow person details
-        await borrowPerson.save();
+        // await borrowPerson.save();
 
-        res.status(200).json({ message: 'Borrow person updated successfully', borrowPerson });
+        res.status(200).json({ message: 'Borrow person updated successfully', updateDetails });
     } catch (error) {
         console.error('Error editing borrow person:', error);
         if (error.code === 11000) {

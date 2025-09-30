@@ -27,6 +27,9 @@ const borrowPersonSchema = new mongoose.Schema({
         ref: 'Admin',
         required: true,
     },
+    cnicImg:{
+        type:String
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('BorrowPerson', borrowPersonSchema);

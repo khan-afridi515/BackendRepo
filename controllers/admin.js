@@ -1,5 +1,9 @@
+const bcrypt = require('bcrypt');
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
+
+
+
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
@@ -11,13 +15,16 @@ exports.login = async (req, res) => {
         }
 
         // Compare Password
-        if (admin.password !== password) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
+        // if (admin.password !== password) {
+        //     return res.status(400).json({ message: 'Invalid credentials' });
+        // }
 
+        const myAdmin = await bcrypt.compare(password, admin.password);
+
+        if(!myAdmin) return res.status(402).json({wrn:"Your password doesn't match!"});
         // Generate JWT token
         const token = jwt.sign({ adminId: admin._id }, process.env.JWT_SECRET, { expiresIn: '9h' });
-        res.json({ token });
+        return res.status(200).json({msg:"Successfully admin loggedin", adminToken: token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error', error });

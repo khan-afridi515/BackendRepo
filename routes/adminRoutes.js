@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { getAdminProfile, login } = require('../controllers/admin');
 
+
+// Route for creating admin account
+
 // Route for login the admin 
 router.post('/login', login);
 

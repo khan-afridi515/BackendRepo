@@ -1,11 +1,6 @@
 const mongoose = require('mongoose');
 
 const saleSchema = new mongoose.Schema({
-    productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true,
-    },
     adminId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',
@@ -23,7 +18,36 @@ const saleSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now,
+    },
+    discount: {
+        type: Number,
+        required: true,
+    },
+    sPrice: {
+        type: String
+    },
+    rPrice: {
+        type:String
+    },
+    productName:{
+        type:String
+    },
+    discountedPrice:{
+        type:String
+    },
+    productMargin:{
+        type:String
+    },
+    invoiceNumber:{
+        type:String
+    },
+    date:{
+        type:String,
+    },
+    productName:{
+        type:String
     }
+    
 }, { timestamps: true });
 
 module.exports = mongoose.model('Sale', saleSchema);
