@@ -28,16 +28,28 @@ app.use(cors({
 const PORT = process.env.PORT || 5000;
 
 connectDB();
+// app.use(express.json());
+// app.use('/api/auth',adminRoutes);
+// app.use('/api/products',productRoutes);
+// app.use('/api/sellProducts',saleproducts);
+// app.use('/api/employees',employee);
+// app.use('/api/invoices',invoice);
+// app.use('/api/borrow',borrow);
+// app.use('/api/expenses',expenses);
+// app.use('/api/owner',owner)
+// app.use('/api/shopExpense',sExpenses);
+
+
 app.use(express.json());
-app.use('/api/auth',adminRoutes);
-app.use('/api/products',productRoutes);
-app.use('/api/sellProducts',saleproducts);
-app.use('/api/employees',employee);
-app.use('/api/invoices',invoice);
-app.use('/api/borrow',borrow);
-app.use('/api/expenses',expenses);
-app.use('/api/owner',owner)
-app.use('/api/shopExpense',sExpenses);
+app.use('/auth',adminRoutes);
+app.use('/products',productRoutes);
+app.use('/sellProducts',saleproducts);
+app.use('/employees',employee);
+app.use('/invoices',invoice);
+app.use('/borrow',borrow);
+app.use('/expenses',expenses);
+app.use('/owner',owner)
+app.use('/shopExpense',sExpenses);
 
 // app.listen(PORT, () => {
 //   console.log(`Server running on port ${PORT}`);
